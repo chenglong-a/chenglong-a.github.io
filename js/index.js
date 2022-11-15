@@ -245,7 +245,7 @@
             about: '简单地活着, 肆意又精彩.'
         },
         Theme: {
-            url: 'https://github.com/first19326/Hexo-LiveForCode',
+            url: 'https://github.com',
             name: 'Hexo - Live For Code'
         }
     };
