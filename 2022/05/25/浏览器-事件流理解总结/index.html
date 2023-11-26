@@ -8,7 +8,7 @@
     <meta http-equiv="Cache-Control" content="no-siteapp">
     <title>
         
-            归档
+            浏览器-事件流理解总结
         
     </title>
     <link rel="shortcut icon" href="#"/>
@@ -31,15 +31,38 @@
 <meta name="generator" content="Hexo 6.3.0"></head>
 <body>
     <a id="cover"></a>
-    <link type="text/css" rel="stylesheet" href="/css/archive.css">
+    <link type="text/css" rel="stylesheet" href="/css/post.css">
 <div id="header" class="header">
     <div class="vertical">
         <div class="inner">
             
-                <h1 class="header-subtitle">归档</h1>
+                <h1 class="header-subtitle">浏览器-事件流理解总结</h1>
                 <div class="header-subinfo">
-                    <p class="article-info-text Chinese"></p>
-                    <p class="article-info-text English"></p>                  
+                    <p class="article-info-text">
+                        <span>
+                            <i class="iconfont icon-time"></i> 发表时间：2022-05-25
+                        </span>
+                        
+                            <span id="/2022/05/25/浏览器-事件流理解总结/" class="leancloud_visitors" data-flag-title="浏览器-事件流理解总结">
+                                <i class="iconfont icon-browse"></i> 阅读：<sapn class="leancloud-visitors-count"></span>
+                            </span>
+                        
+                        <span>
+                            <i class="iconfont icon-interactive"></i> 评论：<span class="valine-comment-count" data-xid="/2022/05/25/浏览器-事件流理解总结/"></span>
+                        </span>  
+                    </p>
+                    
+                        
+                            <span class="category-color">前端</span>
+                        
+                    
+                    
+                        
+                            <span class="tag-color">浏览器</span>
+                        
+                            <span class="tag-color">事件流</span>
+                        
+                    
                 </div>
             
         </div>
@@ -48,57 +71,115 @@
 </div>
 <div id="container">
     
-        
-            <!-- 归档页面、分类归档页面、标签归档页面 -->
-            <div class="articles">
-                <div class="articles-wrap">
-                    <span class="archive-move-on"></span>
-                    <span class="archive-counter">
+        <!-- 文章页面 -->
+        <div id="article">
+            <div class="toc"></div>
+            <div class="article-body">
+                <p>关于事件流机制的理解以及对e.target 和 e.currentTarget问题处理</p>
+<span id="more"></span>
+<h2 id="一-DOM事件流"><a href="#一-DOM事件流" class="headerlink" title="一 DOM事件流"></a>一 DOM事件流</h2><p>DOM(文档对象模型)结构是一个树型结构，当一个HTML元素产生一个事件时，该事件会在元素节点与根结点之间的路径传播，路径所经过的结点都会收到该事件，这个传播过程可称为DOM事件流。</p>
+<p>上面这句话来自<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/DOM%E4%BA%8B%E4%BB%B6%E6%B5%81/7508053?fr=aladdin">百度百科:DOM事件流</a>,该如何理解这句话呢,如图所示,</p>
+<p><img src="/images/post/dom_shijianliu.jpg"></p>
+<p>当有事件触发时,从DOM的根节点开始,向内传递,这一过程可以理解成①②③④的<strong>捕获阶段</strong>;如果图中的d节点被触发,事件整个传递到达<strong>目标阶段</strong>,该阶段结束后,事件会向上传递,这一过程按照水底的气泡一样向上漂,称之为的⑤⑥⑦⑧ <strong>冒泡阶段</strong></p>
+<p>结合图和上面的描述可以总结为</p>
+<p>在DOM兼容浏览器中，事件流分为3个阶段：</p>
+<ol>
+<li>捕获阶段：事件从Document节点自上而下向目标节点传播的阶段；</li>
+<li>目标阶段：真正的目标节点正在处理事件的阶段；</li>
+<li>冒泡阶段还是捕获阶段执行,默认是在冒泡阶段执行</li>
+</ol>
+<h2 id="二-捕获事件流"><a href="#二-捕获事件流" class="headerlink" title="二 捕获事件流"></a>二 捕获事件流</h2><p>捕获事件流可以在支持<a target="_blank" rel="noopener" href="https://www.w3.org/">W3C</a> 标准的浏览器中使用<strong>addEventListener</strong>处理,在<a target="_blank" rel="noopener" href="https://www.runoob.com/jsref/met-element-addeventlistener.html">菜鸟教程:addEventListener</a> 中在线体验.</p>
+<p>该函数有三个参数:</p>
+<ol>
+<li>事件名</li>
+<li>触发执行函数</li>
+<li>冒泡阶段还是捕获阶段执行,默认是在冒泡阶段执行</li>
+</ol>
+<p>为了理解这个问题,我在网上看到一道十分有意思的题 <a target="_blank" rel="noopener" href="https://fe.ecool.fun/topic/4b1cefdc-57fd-443e-94ff-df06135cf5ac?orderBy=updateTime&order=desc&tagId=0">事件流经典问题:e.target 和 e.currentTarget 有什么区别？</a> ,一起来看下,加深理解.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;div id=&quot;a&quot;&gt;</span><br><span class="line">  &lt;div id=&quot;b&quot;&gt;</span><br><span class="line">    &lt;div id=&quot;c&quot;&gt;</span><br><span class="line">      &lt;div id=&quot;d&quot;&gt;点击这里&lt;/div&gt;</span><br><span class="line">    &lt;/div&gt;</span><br><span class="line">  &lt;/div&gt;</span><br><span class="line">&lt;/div&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">const a = document.getElementById(&#x27;a&#x27;)</span><br><span class="line">const b = document.getElementById(&#x27;b&#x27;)</span><br><span class="line">const c = document.getElementById(&#x27;c&#x27;)</span><br><span class="line">const d = document.getElementById(&#x27;d&#x27;)</span><br><span class="line">a.addEventListener(&#x27;click&#x27;, (e) =&gt; &#123;</span><br><span class="line">  const &#123;</span><br><span class="line">    target,</span><br><span class="line">    currentTarget</span><br><span class="line">  &#125; = e</span><br><span class="line">  console.log(`target是$&#123;target.id&#125;`)</span><br><span class="line">  console.log(`currentTarget是$&#123;currentTarget.id&#125;`)</span><br><span class="line">&#125;)</span><br><span class="line">b.addEventListener(&#x27;click&#x27;, (e) =&gt; &#123;</span><br><span class="line">  const &#123;</span><br><span class="line">    target,</span><br><span class="line">    currentTarget</span><br><span class="line">  &#125; = e</span><br><span class="line">  console.log(`target是$&#123;target.id&#125;`)</span><br><span class="line">  console.log(`currentTarget是$&#123;currentTarget.id&#125;`)</span><br><span class="line">&#125;)</span><br><span class="line">c.addEventListener(&#x27;click&#x27;, (e) =&gt; &#123;</span><br><span class="line">  const &#123;</span><br><span class="line">    target,</span><br><span class="line">    currentTarget</span><br><span class="line">  &#125; = e</span><br><span class="line">  console.log(`target是$&#123;target.id&#125;`)</span><br><span class="line">  console.log(`currentTarget是$&#123;currentTarget.id&#125;`)</span><br><span class="line">&#125;)</span><br><span class="line">d.addEventListener(&#x27;click&#x27;, (e) =&gt; &#123;</span><br><span class="line">  const &#123;</span><br><span class="line">    target,</span><br><span class="line">    currentTarget</span><br><span class="line">  &#125; = e</span><br><span class="line">  console.log(`target是$&#123;target.id&#125;`)</span><br><span class="line">  console.log(`currentTarget是$&#123;currentTarget.id&#125;`)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>想想输出的结果是什么?</p>
+<p><strong>addEventListener</strong>第三个参数不设置默认是冒泡顺序,当触发d时,呈现的结果如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">target是d currentTarget是d</span><br><span class="line">target是d currentTarget是c</span><br><span class="line">target是d currentTarget是b</span><br><span class="line">target是d currentTarget是a</span><br></pre></td></tr></table></figure>
+
+<p>将addEventListener第三个参数设置为true,看看捕获阶段呢?</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">target是d currentTarget是a</span><br><span class="line">target是d currentTarget是b</span><br><span class="line">target是d currentTarget是c</span><br><span class="line">target是d currentTarget是d</span><br></pre></td></tr></table></figure>
+
+<p>总结如下:</p>
+<ol>
+<li><code>e.target</code>：触发事件的元素</li>
+<li><code>e.currentTarget</code>：绑定事件的元素</li>
+</ol>
+<h2 id="三-事件委托"><a href="#三-事件委托" class="headerlink" title="三 事件委托"></a>三 事件委托</h2><p>通过上面的例子,我们可以很清晰的发现,如果当前父级元素下有若干个子级元素,对父级做监听后,当我们通过<strong>addEventListener</strong>回调函数返回的e.tartget便能得到触发事件的元素.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;div id=&#x27;list&#x27;&gt;</span><br><span class="line">    &lt;div id=&#x27;item-1&#x27;&gt;item-1&lt;/div&gt;</span><br><span class="line">    &lt;div id=&#x27;item-2&#x27;&gt;item-2&lt;/div&gt;</span><br><span class="line">    &lt;div id=&#x27;item-3&#x27;&gt;item-3&lt;/div&gt;</span><br><span class="line">    &lt;div id=&#x27;item-4&#x27;&gt;item-4&lt;/div&gt;</span><br><span class="line">&lt;/div&gt;</span><br></pre></td></tr></table></figure>
+
+<p>通过给id为list的元素添加监听,在点击列表中的元素,便可实现事件委托,事件委托便是处理事件处理程序过多问题的一种解决方案</p>
+<h2 id="四-阻止事件流"><a href="#四-阻止事件流" class="headerlink" title="四 阻止事件流"></a>四 阻止事件流</h2><p>阻止事件流常用的两种种方式</p>
+<p><strong>e.stopPropagation()</strong>:阻止目标元素的事件冒泡到父级元素;</p>
+<p><strong>e.preventDefault()</strong>:取消一个目标元素的默认行为(例如:<code>a</code>链接,<code>input</code>标签的<code>submit</code>等)</p>
+
+                
+                <p class="end">__END__</p>
+            </div>
+            <div class="article-footer">
+                <div class="suffix-box">
+    <div class="suffix-box-left">
+        <img src="/image/sidebar/avatar.jpg" alt="程橙">
+    </div>
+    <div class="suffix-box-right">
+        <span class="suffix-box-title">文章作者：</span>程橙
+        <br>
+        <span class="suffix-box-title">文章出处：</span><a href="/2022/05/25/%E6%B5%8F%E8%A7%88%E5%99%A8-%E4%BA%8B%E4%BB%B6%E6%B5%81%E7%90%86%E8%A7%A3%E6%80%BB%E7%BB%93/" target="_blank">浏览器-事件流理解总结</a>
+        <br>
+        <span class="suffix-box-title">作者签名：</span>简单地活着, 肆意又精彩.
+        <br>
+        <span class="suffix-box-title">关于主题：</span><a href="https://https://github.com/chenglong-a" target="_blank">Hexo - Live For Code</a>
+        <br>
+        <span class="suffix-box-title">版权声明：</span>文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" title="BY-NC-SA" target="_blank">BY-NC-SA</a> 许可协议，转载请注明出处
+        <br>
+    </div>
+    <div style="clear: both;"></div>
+</div>
+                
+                    <div class="category">
+                        分类：
                         
-                            目前共计 6 篇日志，继续加油！
+                            <a href="/category/%E5%89%8D%E7%AB%AF/">前端</a>
                         
-                    </span>
-                    
-                    
+                    </div>
+                
+                
+                    <div class="tag">
+                        标签：
                         
-                            <div class="archive-title">
-                                <h2 class="archive-year">2023</h2>
-                            </div>
-                            
-                           
-                        <div class="article">
-                            <div class="article-header">
-                                <h1 class="article-title"><a href="/2023/11/26/friend/"><span></span></a></h1>
-                                <div class="article-meta">
-                                    <span class="article-time">11-26</span>
-                                </div>
-                            </div>
-                        </div>
+                            <a href="/tag/%E6%B5%8F%E8%A7%88%E5%99%A8/">浏览器</a>
+                        
+                            <a href="/tag/%E4%BA%8B%E4%BB%B6%E6%B5%81/">事件流</a>
+                        
+                    </div>
+                
+                <div class="article-prev-next">
                     
-                           
-                        <div class="article">
-                            <div class="article-header">
-                                <h1 class="article-title"><a href="/archives.html"><span>文章归档</span></a></h1>
-                                <div class="article-meta">
-                                    <span class="article-time">11-26</span>
-                                </div>
-                            </div>
-                        </div>
+                        <a href="/2022/06/24/%E6%B5%8F%E8%A7%88%E5%99%A8-%E5%8F%91%E5%B1%95%E5%8F%B2/" class="prev-prefix">« </a> 上一篇：    <a href="/2022/06/24/%E6%B5%8F%E8%A7%88%E5%99%A8-%E5%8F%91%E5%B1%95%E5%8F%B2/" title="发布于 2022-06-24 12:00">浏览器-发展史</a>
+                        <br>
                     
-                           
-                        <div class="article">
-                            <div class="article-header">
-                                <h1 class="article-title"><a href="/2023/11/15/hello-world/"><span>Hello World</span></a></h1>
-                                <div class="article-meta">
-                                    <span class="article-time">11-15</span>
-                                </div>
-                            </div>
-                        </div>
+                    
+                        <a href="/2022/03/25/hello-world/" class="next-prefix">» </a> 下一篇：    <a href="/2022/03/25/hello-world/" title="发布于 2022-03-25 12:00">Hello World</a>
                     
                 </div>
             </div>
             
+    <div class="article-comments">
         
+            <div class="comments-title">
+                评论列表
+            </div>
+        
+        <div class="comments-content"></div>
+    </div>
+
+        </div>
     
 </div>
     <div id="footer"></div>
@@ -130,7 +211,7 @@
                     
                         <li class=""><a href="/tag" class="" target="_self"><span class="iconfont icon-discount-fill"></span>标签</a></li>
                     
-                        <li class=" active "><a href="/archive" class="" target="_self"><span class="iconfont icon-calendar-fill"></span>归档</a></li>
+                        <li class=""><a href="/archive" class="" target="_self"><span class="iconfont icon-calendar-fill"></span>归档</a></li>
                     
                         <li class=""><a href="/donate" class="" target="_self"><span class="iconfont icon-heart-fill"></span>赞赏</a></li>
                     
